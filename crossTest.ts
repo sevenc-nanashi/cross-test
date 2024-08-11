@@ -1,4 +1,3 @@
-import { CurrentRuntime, Runtime } from "@cross/runtime";
 import { crossTestRunner } from "./crossTestRunner.ts";
 
 const crossTestEntry = await import("./crossTestEntry.ts")
@@ -15,7 +14,7 @@ export type TestOptions = {
 };
 
 export const crossTest = (file: string, options: TestOptions) => {
-  if (CurrentRuntime === Runtime.Deno) {
+  if (typeof Deno !== "undefined" && Deno.version) {
     return crossTestEntry({
       file,
       options,

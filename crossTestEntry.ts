@@ -50,10 +50,10 @@ const prepareJs = async (file: string) => {
       external: ["*/crossTestEntry.ts"],
       outfile,
       banner: {
-        js: runner.preludeString,
+        js: `const __anytestPrelude = (${runner.prelude.toString()})();const Deno = { test: __anytestPrelude.prepareDenoTest() }`,
       },
       footer: {
-        js: runner.outroString,
+        js: `__anytestPrelude.outro();`,
       },
       plugins: denoPlugins({
         configPath: await getDenoJsonPath(),
@@ -88,7 +88,7 @@ export const crossTestEntry = ({
         if (platform === "node" || platform === "bun") {
           await t.step(
             `${platform[0].toUpperCase()}${platform.slice(1)}`,
-            async () => {
+            async (t) => {
               let commandArgs: string[];
               if (platform === "node") {
                 commandArgs = ["node", path];
@@ -98,27 +98,125 @@ export const crossTestEntry = ({
 
               const { promise: serverPromise, resolve: resolveServer } =
                 Promise.withResolvers<
-                  | {
-                      type: "pass";
-                    }
-                  | {
-                      type: "fail";
-                      error: string;
-                    }
+                  runner.TestMessage & { type: "pass" | "fail" }
                 >();
+
+              const runnerStepPromises = new Map<
+                string,
+                {
+                  resolve: () => void;
+                  reject: (error: Error) => void;
+                  promise: Promise<void>;
+                }
+              >();
+              const hostStepPromises = new Map<string, Promise<boolean>>();
+              const testStepContexts = new Map<string, Deno.TestContext>();
               const server = Deno.serve(
                 { port: 0, onListen: () => {} },
                 async (req) => {
-                  const data = await req.json();
-                  server.shutdown();
-                  resolveServer(data);
+                  const data: runner.TestMessage = await req.json();
+                  debug(`Received: ${JSON.stringify(data)}`);
+                  switch (data.type) {
+                    case "pass":
+                    case "fail":
+                      server.shutdown();
+                      resolveServer(data);
+                      break;
+                    case "stepStart": {
+                      const { promise, resolve, reject } =
+                        Promise.withResolvers<void>();
+                      const nonce = crypto.randomUUID();
+                      runnerStepPromises.set(nonce, {
+                        promise,
+                        resolve,
+                        reject,
+                      });
+                      let context: Deno.TestContext | undefined;
+                      if (!data.parent) {
+                        context = t;
+                      } else {
+                        context = testStepContexts.get(data.parent);
+                      }
+                      if (!context) {
+                        server.shutdown();
+                        resolveServer({
+                          type: "fail",
+                          error: `Invalid parent: ${data.parent}`,
+                        });
+                        return new Response("");
+                      }
+                      hostStepPromises.set(
+                        nonce,
+                        data.ignore
+                          ? context.step({
+                              name: data.name,
+                              ignore: true,
+                              fn: async () => {},
+                            })
+                          : context.step({
+                              name: data.name,
+                              fn: async (t) => {
+                                testStepContexts.set(nonce, t);
+
+                                await promise;
+                              },
+                            }),
+                      );
+                      return new Response(
+                        JSON.stringify({
+                          nonce,
+                        }),
+                      );
+                    }
+                    case "stepPass": {
+                      const runnerStepPromise = runnerStepPromises.get(
+                        data.nonce,
+                      );
+                      if (!runnerStepPromise) {
+                        server.shutdown();
+                        resolveServer({
+                          type: "fail",
+                          error: `Invalid nonce: ${data.nonce}`,
+                        });
+                        return new Response("");
+                      }
+                      runnerStepPromise.resolve();
+
+                      break;
+                    }
+                    case "stepFail": {
+                      const runnerStepPromise = runnerStepPromises.get(
+                        data.nonce,
+                      );
+                      if (!runnerStepPromise) {
+                        server.shutdown();
+                        resolveServer({
+                          type: "fail",
+                          error: `Invalid nonce: ${data.nonce}`,
+                        });
+                        return new Response("");
+                      }
+
+                      runnerStepPromise.reject(new Error(data.error));
+                      break;
+                    }
+
+                    default:
+                      server.shutdown();
+                      resolveServer({
+                        type: "fail",
+                        error: `Invalid payload: ${JSON.stringify(data)}`,
+                      });
+                  }
 
                   return new Response("");
                 },
               );
 
-              const payload = {
+              const payload: runner.TestPayload = {
                 id: thisId,
+                platform,
+                file,
                 server: `http://localhost:${server.addr.port}`,
               };
 
