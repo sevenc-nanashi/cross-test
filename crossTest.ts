@@ -8,9 +8,9 @@ const crossTestHost = await import("./crossTestHost.ts")
     };
   });
 
-type RuntimeType = "node" | "browser" | "deno" | "cfWorkers" | "bun";
+export type Platform = "node" | "browser" | "deno" | "cfWorkers" | "bun";
 export type TestOptions = {
-  platforms: RuntimeType[];
+  platforms: Platform[];
 };
 
 export const crossTest = (file: string, options: TestOptions) => {

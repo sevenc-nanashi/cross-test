@@ -1,3 +1,5 @@
+import type { Platform } from "./crossTest.ts";
+
 let globalId = 0;
 
 type Global = typeof globalThis & {
@@ -30,6 +32,7 @@ type DenoTestArgs =
     ];
 
 export const prelude = (): {
+  prelude: () => void;
   prepareDenoTest: () => unknown;
   outro: () => Promise<void>;
 } => {
@@ -66,6 +69,50 @@ export const prelude = (): {
   };
 
   return {
+    prelude: async () => {
+      const process = await import("node:process");
+      const payload: TestPayload = JSON.parse(process.env.ANYTEST_PAYLOAD!);
+      if (payload.platform === "cfWorkers") {
+        globalThis.eval = () => {
+          throw new Error("eval is not available in Cloudflare Workers.");
+        };
+        globalThis.Function = new Proxy(Function, {
+          construct: () => {
+            throw new Error(
+              "Function constructor is not available in Cloudflare Workers",
+            );
+          },
+        });
+        globalThis.WebAssembly.compile = () => {
+          throw new Error(
+            "WebAssembly.compile is not available in Cloudflare Workers",
+          );
+        };
+        globalThis.WebAssembly.compileStreaming = () => {
+          throw new Error(
+            "WebAssembly.compileStreaming is not available in Cloudflare Workers",
+          );
+        };
+        globalThis.WebAssembly.instantiate = new Proxy(
+          WebAssembly.instantiate,
+          {
+            apply: (target, thisArg, args) => {
+              if (args[0] instanceof ArrayBuffer || "buffer" in args[0]) {
+                throw new Error(
+                  "WebAssembly.instantiate with buffer is not available in Cloudflare Workers",
+                );
+              }
+              return Reflect.apply(target, thisArg, args);
+            },
+          },
+        );
+        globalThis.WebAssembly.instantiateStreaming = () => {
+          throw new Error(
+            "WebAssembly.instantiateStreaming is not available in Cloudflare Workers",
+          );
+        };
+      }
+    },
     prepareDenoTest: () => {
       const mockTest = (...args: DenoTestArgs) => {
         const { name, options, fn } = resolveTestArgs(args);
@@ -179,7 +226,7 @@ export const prelude = (): {
 
 export type TestPayload = {
   id: number;
-  platform: string;
+  platform: Platform;
   file: string;
   server: string;
 };

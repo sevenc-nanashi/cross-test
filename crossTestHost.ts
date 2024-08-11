@@ -6,8 +6,6 @@ import * as runner from "./crossTestRunner.ts";
 import type { TestOptions } from "./crossTest.ts";
 import { debug, isDebug } from "./debug.ts";
 
-type RuntimeType = "node" | "browser" | "deno" | "cfWorkers" | "bun";
-
 const distRoot = join(Deno.cwd(), ".anytest_temp");
 
 let denoJsonPath: string;
@@ -46,11 +44,16 @@ const prepareJs = async (file: string) => {
       entryPoints: [file],
       format: "esm",
       bundle: true,
+      sourcemap: true,
       minify: !isDebug(),
       external: ["*/crossTestHost.ts"],
       outfile,
       banner: {
-        js: `const __anytestPrelude = (${runner.prelude.toString()})();const Deno = { test: __anytestPrelude.prepareDenoTest() }`,
+        js: [
+          `const __anytestPrelude = (${runner.prelude.toString()})()`,
+          "await __anytestPrelude.prelude();",
+          "const Deno = { test: __anytestPrelude.prepareDenoTest() }",
+        ].join(";"),
       },
       footer: {
         js: `__anytestPrelude.outro();`,
@@ -85,15 +88,17 @@ export const crossTestHost = ({
         if (platform === "deno") {
           await t.step("Deno", test);
         }
-        if (platform === "node" || platform === "bun") {
+        if (["node", "bun", "cfWorkers"].includes(platform)) {
           await t.step(
             `${platform[0].toUpperCase()}${platform.slice(1)}`,
             async (t) => {
               let commandArgs: string[];
-              if (platform === "node") {
-                commandArgs = ["node", path];
+              if (platform === "bun") {
+                commandArgs = ["bun", "run", path];
+              } else if (["node", "cfWorkers"].includes(platform)) {
+                commandArgs = ["node", "--enable-source-maps", path];
               } else {
-                commandArgs = ["bun", path];
+                throw new Error(`Unreachable: ${platform}`);
               }
 
               const { promise: serverPromise, resolve: resolveServer } =
