@@ -1,3 +1,4 @@
+import { CurrentRuntime, Runtime } from "@cross/runtime";
 import { crossTestRunner } from "./crossTestRunner.ts";
 
 const crossTestEntry = await import("./crossTestEntry.ts")
@@ -14,16 +15,12 @@ export type TestOptions = {
 };
 
 export const crossTest = (file: string, options: TestOptions) => {
-  // @ts-expect-error
-  if (!Deno.__isAnytestMock) {
+  if (CurrentRuntime === Runtime.Deno) {
     return crossTestEntry({
       file,
       options,
     });
   }
 
-  return crossTestRunner({
-    file,
-    options,
-  });
+  return crossTestRunner();
 };
