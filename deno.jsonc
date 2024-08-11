@@ -1,8 +1,11 @@
 {
-  "name": "anytest",
+  "name": "@sevenc-nanashi/cross-test",
   "version": "0.1.0",
   "tasks": {
     "dev": "deno test --watch mod.ts"
+  },
+  "test": {
+    "exclude": ["./example"]
   },
   "imports": {
     "@core/asyncutil": "jsr:@core/asyncutil@^1.0.0",

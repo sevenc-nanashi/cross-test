@@ -34,7 +34,8 @@
       "npm:defu@^6.1.4": "npm:defu@6.1.4",
       "npm:dequal@^2.0.3": "npm:dequal@2.0.3",
       "npm:esbuild@^0.23.0": "npm:esbuild@0.23.0",
-      "npm:fast-base64": "npm:fast-base64@0.1.8"
+      "npm:fast-base64": "npm:fast-base64@0.1.8",
+      "npm:fast-base64@^0.1.8": "npm:fast-base64@0.1.8"
     },
     "jsr": {
       "@core/asyncutil@1.0.0": {

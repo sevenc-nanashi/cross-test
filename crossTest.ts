@@ -1,10 +1,13 @@
 import { crossTestRunner } from "./crossTestRunner.ts";
+import type { crossTestHost } from "./crossTestHost.ts";
 
-const crossTestHost = await import("./crossTestHost.ts")
-  .then((m) => m.crossTestHost)
-  .catch(() => {
+const maybeCrossTestHost = await import("./crossTestHost.ts")
+  .then((m) => m.crossTestHost as typeof crossTestHost)
+  .catch((e) => {
     return () => {
-      throw new Error("Unavailable");
+      throw new Error(
+        `Unavailable in this context, possibly library bug: ${e}`,
+      );
     };
   });
 
@@ -13,9 +16,15 @@ export type TestOptions = {
   platforms: Platform[];
 };
 
-export const crossTest = (file: string, options: TestOptions) => {
+export const createCrossTest = (file: string, options: TestOptions) => {
   if (typeof Deno !== "undefined" && Deno.version) {
-    return crossTestHost({
+    if (
+      Deno.permissions.querySync({ name: "read", path: "<PWD>" }).state !==
+      "granted"
+    ) {
+      throw new Error("You need --allow-read to run tests");
+    }
+    return maybeCrossTestHost({
       file,
       options,
     });
