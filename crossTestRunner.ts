@@ -125,6 +125,7 @@ export const prelude = (): {
         const testContext = {
           name,
           origin: payload.file,
+          parent: this.nonce ? testContexts.get(this.nonce) : undefined,
           step: testStep.bind({ nonce: newNonce }),
         };
         testContexts.set(newNonce, testContext);
