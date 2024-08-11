@@ -1,7 +1,7 @@
 import { crossTestRunner } from "./crossTestRunner.ts";
 
-const crossTestEntry = await import("./crossTestEntry.ts")
-  .then((m) => m.crossTestEntry)
+const crossTestHost = await import("./crossTestHost.ts")
+  .then((m) => m.crossTestHost)
   .catch(() => {
     return () => {
       throw new Error("Unavailable");
@@ -15,7 +15,7 @@ export type TestOptions = {
 
 export const crossTest = (file: string, options: TestOptions) => {
   if (typeof Deno !== "undefined" && Deno.version) {
-    return crossTestEntry({
+    return crossTestHost({
       file,
       options,
     });

@@ -47,7 +47,7 @@ const prepareJs = async (file: string) => {
       format: "esm",
       bundle: true,
       minify: !isDebug(),
-      external: ["*/crossTestEntry.ts"],
+      external: ["*/crossTestHost.ts"],
       outfile,
       banner: {
         js: `const __anytestPrelude = (${runner.prelude.toString()})();const Deno = { test: __anytestPrelude.prepareDenoTest() }`,
@@ -69,7 +69,7 @@ const prepareJs = async (file: string) => {
 };
 
 let globalId = 0;
-export const crossTestEntry = ({
+export const crossTestHost = ({
   file,
   options,
 }: {
