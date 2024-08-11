@@ -242,7 +242,7 @@ export const crossTestHost = ({
               const status = await process.status;
               if (!status.success) {
                 server.shutdown();
-                throw new Error(`Initial process failed: ${status.code}`);
+                throw new Error(`Initial process failed: Exit code ${status.code}`);
               }
               const result = await serverPromise;
               if (result.type === "fail") {

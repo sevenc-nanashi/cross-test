@@ -33,7 +33,8 @@
       "npm:@types/node": "npm:@types/node@18.16.19",
       "npm:defu@^6.1.4": "npm:defu@6.1.4",
       "npm:dequal@^2.0.3": "npm:dequal@2.0.3",
-      "npm:esbuild@^0.23.0": "npm:esbuild@0.23.0"
+      "npm:esbuild@^0.23.0": "npm:esbuild@0.23.0",
+      "npm:fast-base64": "npm:fast-base64@0.1.8"
     },
     "jsr": {
       "@core/asyncutil@1.0.0": {
@@ -296,6 +297,10 @@
           "@esbuild/win32-ia32": "@esbuild/win32-ia32@0.23.0",
           "@esbuild/win32-x64": "@esbuild/win32-x64@0.23.0"
         }
+      },
+      "fast-base64@0.1.8": {
+        "integrity": "sha512-LICiPjlLyh7/P3gcJYDjKEIX41odzqny1VHSnPsAlBb/zcSJJPYrSNHs54e2TytDRTwHZl7KG5c33IMLdT+9Eg==",
+        "dependencies": {}
       }
     }
   },

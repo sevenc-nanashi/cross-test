@@ -2,7 +2,9 @@ import { CurrentRuntime, Runtime } from "@cross/runtime";
 import { crossTest } from "./crossTest.ts";
 import { assertEquals } from "@std/assert";
 
-const test = crossTest(import.meta.url, { platforms: ["deno", "node", "bun"] });
+const test = crossTest(import.meta.url, {
+  platforms: ["deno", "node", "bun", "cfWorkers"],
+});
 
 Deno.test(
   "hoge",
@@ -24,6 +26,13 @@ Deno.test(
     await t.step({
       name: "bun only",
       ignore: CurrentRuntime !== Runtime.Bun,
+      fn: () => {
+        assertEquals(1, 1);
+      },
+    });
+    await t.step({
+      name: "workerd only",
+      ignore: CurrentRuntime !== Runtime.Workerd,
       fn: () => {
         assertEquals(1, 1);
       },

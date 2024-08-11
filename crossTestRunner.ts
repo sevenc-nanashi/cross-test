@@ -73,8 +73,24 @@ export const prelude = (): {
       const process = await import("node:process");
       const payload: TestPayload = JSON.parse(process.env.ANYTEST_PAYLOAD!);
       if (payload.platform === "cfWorkers") {
-        globalThis.eval = () => {
-          throw new Error("eval is not available in Cloudflare Workers.");
+        const restrictFn = <T extends (...args: never[]) => unknown>(fn: T): T =>
+          new Proxy(fn, {
+            apply: (target, thisArg, args) => {
+              const stack = new Error().stack!.split("\n");
+              // "Error", this proxy, and the caller
+              if (!stack[2].includes("(node:internal")) {
+                throw new Error("This function is not available in Cloudflare Workers");
+              }
+
+              return Reflect.apply(target, thisArg, args);
+            },
+          });
+
+        globalThis.eval = restrictFn(globalThis.eval);
+
+        // @ts-expect-error Provide only userAgent
+        globalThis.navigator = {
+          userAgent: "Cloudflare-Workers",
         };
         globalThis.Function = new Proxy(Function, {
           construct: () => {
@@ -83,16 +99,10 @@ export const prelude = (): {
             );
           },
         });
-        globalThis.WebAssembly.compile = () => {
-          throw new Error(
-            "WebAssembly.compile is not available in Cloudflare Workers",
-          );
-        };
-        globalThis.WebAssembly.compileStreaming = () => {
-          throw new Error(
-            "WebAssembly.compileStreaming is not available in Cloudflare Workers",
-          );
-        };
+        globalThis.WebAssembly.compile = restrictFn(WebAssembly.compile);
+        globalThis.WebAssembly.compileStreaming = restrictFn(
+          globalThis.WebAssembly.compileStreaming,
+        );
         globalThis.WebAssembly.instantiate = new Proxy(
           WebAssembly.instantiate,
           {
