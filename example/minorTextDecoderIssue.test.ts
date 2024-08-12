@@ -12,7 +12,7 @@ import { createCrossTest } from "../crossTest.ts";
 import { assertEquals } from "jsr:@std/assert";
 
 const crossTest = createCrossTest(import.meta.url, {
-  platforms: ["deno", "node", "bun", "cfWorkers"],
+  runtimes: ["deno", "node", "bun", "cfWorkers"],
 });
 
 Deno.test(

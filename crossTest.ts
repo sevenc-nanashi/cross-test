@@ -11,9 +11,9 @@ const maybeCrossTestHost = await import("./crossTestHost.ts")
     };
   });
 
-export type Platform = "node" | "browser" | "deno" | "cfWorkers" | "bun";
+export type Runtime = "node" | "browser" | "deno" | "cfWorkers" | "bun";
 export type TestOptions = {
-  platforms: Platform[];
+  runtimes: Runtime[];
 };
 
 export const createCrossTest = (file: string, options: TestOptions) => {

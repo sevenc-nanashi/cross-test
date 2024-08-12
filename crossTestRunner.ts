@@ -1,4 +1,4 @@
-import type { Platform } from "./crossTest.ts";
+import type { Runtime } from "./crossTest.ts";
 
 let globalId = 0;
 
@@ -72,7 +72,7 @@ export const prelude = (): {
     prelude: async () => {
       const process = await import("node:process");
       const payload: TestPayload = JSON.parse(process.env.ANYTEST_PAYLOAD!);
-      if (payload.platform === "cfWorkers") {
+      if (payload.runtime === "cfWorkers") {
         const restrictFn = <T extends (...args: never[]) => unknown>(fn: T): T =>
           new Proxy(fn, {
             apply: (target, thisArg, args) => {
@@ -236,7 +236,7 @@ export const prelude = (): {
 
 export type TestPayload = {
   id: number;
-  platform: Platform;
+  runtime: Runtime;
   file: string;
   server: string;
 };

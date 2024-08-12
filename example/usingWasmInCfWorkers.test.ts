@@ -10,7 +10,7 @@ import { assertEquals } from "jsr:@std/assert";
 import { toBase64 } from "npm:fast-base64@^0.1.8";
 
 const crossTest = createCrossTest(import.meta.url, {
-  platforms: ["deno", "node", "bun", "cfWorkers"],
+  runtimes: ["deno", "node", "bun", "cfWorkers"],
 });
 
 Deno.test(

@@ -84,21 +84,21 @@ export const crossTestHost = ({
       const thisId = globalId++;
       const path = await prepareJs(file);
       debug(`Test registered: ${file}[${thisId}]`);
-      for (const platform of options.platforms) {
-        if (platform === "deno") {
+      for (const runtime of options.runtimes) {
+        if (runtime === "deno") {
           await t.step("Deno", test);
         }
-        if (["node", "bun", "cfWorkers"].includes(platform)) {
+        if (["node", "bun", "cfWorkers"].includes(runtime)) {
           await t.step(
-            `${platform[0].toUpperCase()}${platform.slice(1)}`,
+            `${runtime[0].toUpperCase()}${runtime.slice(1)}`,
             async (t) => {
               let commandArgs: string[];
-              if (platform === "bun") {
+              if (runtime === "bun") {
                 commandArgs = ["bun", "run", path];
-              } else if (["node", "cfWorkers"].includes(platform)) {
+              } else if (["node", "cfWorkers"].includes(runtime)) {
                 commandArgs = ["node", "--enable-source-maps", path];
               } else {
-                throw new Error(`Unreachable: ${platform}`);
+                throw new Error(`Unreachable: ${runtime}`);
               }
 
               const { promise: serverPromise, resolve: resolveServer } =
@@ -220,7 +220,7 @@ export const crossTestHost = ({
 
               const payload: runner.TestPayload = {
                 id: thisId,
-                platform,
+                runtime,
                 file,
                 server: `http://localhost:${server.addr.port}`,
               };
