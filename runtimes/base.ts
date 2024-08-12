@@ -22,6 +22,35 @@ const exists = async (path: string): Promise<boolean> => {
     .then(() => true)
     .catch(() => false);
 };
+
+let distRoot: string | undefined;
+export const createDistRoot = async () => {
+  if (distRoot) {
+    return distRoot;
+  }
+
+  if (
+    Deno.permissions.querySync({
+      name: "env",
+      variable: "CROSSTEST_TEMPDIST",
+    }).state === "granted" &&
+    Deno.env.get("CROSSTEST_TEMPDIST")
+  ) {
+    distRoot = Deno.env.get("CROSSTEST_TEMPDIST")!;
+    debug(`Using CROSSTEST_TEMPDIST: ${distRoot}`);
+    return distRoot;
+  }
+  debug("Creating distRoot");
+  distRoot = await Deno.makeTempDir();
+  await Deno.mkdir(distRoot, { recursive: true });
+
+  globalThis.addEventListener("unload", () => {
+    debug(`Cleaning up distRoot: ${distRoot}`);
+    Deno.remove(distRoot!, { recursive: true });
+  });
+
+  return distRoot;
+};
 export const findDenoJson = async (
   path: string,
 ): Promise<string | undefined> => {
@@ -50,7 +79,9 @@ export type SerializedError =
     };
 const deserializeError = (error: SerializedError): Error => {
   if (error.type === "error") {
-    const e = new Error(error.message);
+    const actualStacks = error.stack?.split("\n").slice(1) ?? [];
+    // Deno cannot show overridden e.stack, so I use message instead to show the original stack
+    const e = new Error(error.message + "\n" + actualStacks.join("\n"));
     e.name = error.name;
     e.stack = error.stack;
     return e;

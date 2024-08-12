@@ -21,7 +21,8 @@
     "@std/testing": "jsr:@std/testing@^1.0.0",
     "defu": "npm:defu@^6.1.4",
     "dequal": "npm:dequal@^2.0.3",
-    "esbuild": "npm:esbuild@^0.23.0"
+    "esbuild": "npm:esbuild@^0.23.0",
+    "source-map": "npm:source-map@^0.7.4"
   },
   "exports": "./mod.ts"
 }

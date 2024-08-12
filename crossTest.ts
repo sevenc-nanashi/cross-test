@@ -1,4 +1,4 @@
-import { crossTestRunner as nodeRunner } from "./runtimes/nodeLikeRunner.ts";
+import { crossTestRunner } from "./runtimes/runner.ts";
 import * as host from "./host.deno.ts";
 
 export type Runtime = "node" | "browser" | "deno" | "cfWorkers" | "bun";
@@ -6,7 +6,13 @@ export type TestOptions = {
   runtimes: Runtime[];
 };
 
+const calledFrom = new Set<string>();
 export const createCrossTest = async (file: string, options: TestOptions) => {
+  if (calledFrom.has(file)) {
+    throw new Error("createCrossTest must be called only once per file");
+  }
+  calledFrom.add(file);
+
   if (typeof Deno !== "undefined" && Deno.version) {
     const key = "crossTestHost" as string;
     // @ts-expect-error Some hack to remove esbuild warning
@@ -16,10 +22,5 @@ export const createCrossTest = async (file: string, options: TestOptions) => {
     });
   }
 
-  // @ts-expect-error Use if `process` is defined to check if we are in node
-  if (typeof process !== "undefined") {
-    return nodeRunner();
-  }
-
-  throw new Error("Unsupported runtime");
+  return crossTestRunner();
 };

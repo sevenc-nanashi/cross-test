@@ -43,7 +43,8 @@
       "npm:dequal@^2.0.3": "npm:dequal@2.0.3",
       "npm:esbuild@^0.23.0": "npm:esbuild@0.23.0",
       "npm:fast-base64": "npm:fast-base64@0.1.8",
-      "npm:fast-base64@^0.1.8": "npm:fast-base64@0.1.8"
+      "npm:fast-base64@^0.1.8": "npm:fast-base64@0.1.8",
+      "npm:source-map@^0.7.4": "npm:source-map@0.7.4"
     },
     "jsr": {
       "@astral/astral@0.4.5": {
@@ -350,6 +351,10 @@
       "fast-base64@0.1.8": {
         "integrity": "sha512-LICiPjlLyh7/P3gcJYDjKEIX41odzqny1VHSnPsAlBb/zcSJJPYrSNHs54e2TytDRTwHZl7KG5c33IMLdT+9Eg==",
         "dependencies": {}
+      },
+      "source-map@0.7.4": {
+        "integrity": "sha512-l3BikUxvPOcn5E74dZiq5BGsTb5yEwhaTSzccU6t4sDOH8NWJCstKO5QT2CvtFoK6F0saL7p9xHAqHOlCPJygA==",
+        "dependencies": {}
       }
     }
   },
@@ -369,7 +374,8 @@
       "jsr:@std/testing@^1.0.0",
       "npm:defu@^6.1.4",
       "npm:dequal@^2.0.3",
-      "npm:esbuild@^0.23.0"
+      "npm:esbuild@^0.23.0",
+      "npm:source-map@^0.7.4"
     ]
   }
 }

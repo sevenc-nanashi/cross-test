@@ -2,15 +2,17 @@ import { join } from "@std/path";
 import { Lock } from "@core/asyncutil/lock";
 import * as esbuild from "esbuild";
 import { denoPlugins } from "@luca/esbuild-deno-loader";
+import { SourceMapGenerator, SourceMapConsumer } from "source-map";
 import type { Runtime } from "../crossTest.ts";
-import { findDenoJson, RunnerController } from "./base.ts";
+import { createDistRoot, findDenoJson, RunnerController } from "./base.ts";
 import { debug, isDebug } from "../debug.ts";
-import { prelude } from "./nodeLikeRunner.ts";
+import { prelude } from "./runner.ts";
 
 export type ParentData = {
   runtime: Runtime;
   file: string;
   server: string;
+  isDebug: boolean;
 };
 
 const hash = async (data: string) => {
@@ -19,23 +21,6 @@ const hash = async (data: string) => {
   const hashBuffer = await crypto.subtle.digest("SHA-256", dataBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-};
-
-let distRoot: string | undefined;
-const createDistRoot = async () => {
-  if (distRoot) {
-    return distRoot;
-  }
-
-  distRoot = await Deno.makeTempDir();
-  await Deno.mkdir(distRoot, { recursive: true });
-
-  globalThis.addEventListener("unload", () => {
-    debug(`Cleaning up distRoot: ${distRoot}`);
-    Deno.remove(distRoot!, { recursive: true });
-  });
-
-  return distRoot;
 };
 
 const cache = new Lock(new Map<string, string>());
@@ -52,6 +37,16 @@ const prepareJs = async (file: string) =>
     const distRoot = await createDistRoot();
     const outfile = join(distRoot, `${await hash(file)}-node.mjs`);
     debug(`deno.json/deno.jsonc path: ${denoJsonPath}`);
+    const preludeCode = await esbuild.transform(
+      [
+        `const __anytestPrelude = (${prelude.toString()})()`,
+        "const Deno = { test: __anytestPrelude.prepareDenoTest() }",
+      ].join(";"),
+      {
+        minify: !isDebug(),
+      },
+    );
+    const outroCode = `__anytestPrelude.outro(JSON.parse(process.env.CROSSTEST_PARENT_DATA))`;
     await esbuild.build({
       entryPoints: [file],
       format: "esm",
@@ -60,13 +55,10 @@ const prepareJs = async (file: string) =>
       minify: !isDebug(),
       outfile,
       banner: {
-        js: [
-          `const __anytestPrelude = (${prelude.toString()})()`,
-          "const Deno = { test: __anytestPrelude.prepareDenoTest() }",
-        ].join(";"),
+        js: preludeCode.code,
       },
       footer: {
-        js: `__anytestPrelude.outro();`,
+        js: outroCode,
       },
       plugins: [
         {
@@ -85,11 +77,33 @@ const prepareJs = async (file: string) =>
         }),
       ],
     });
-
     await esbuild.stop();
     debug(`Prepared: ${file} -> ${outfile}`);
 
-    map.set(file, outfile);
+    const mapPath = `${outfile}.map`;
+    const mapData = SourceMapGenerator.fromSourceMap(
+      await new SourceMapConsumer(JSON.parse(await Deno.readTextFile(mapPath))),
+    );
+    for (let line = 0; line < preludeCode.code.split("\n").length; line++) {
+      mapData.addMapping({
+        source: "cross-test:prelude",
+        generated: { line: line + 1, column: 0 },
+        original: { line: 1, column: 0 },
+      });
+    }
+    const finalLines = await Deno.readTextFile(outfile);
+    const finalLinesCount = finalLines.split("\n").length;
+    for (let line = 0; line < outroCode.split("\n").length; line++) {
+      mapData.addMapping({
+        source: "cross-test:outro",
+        generated: { line: finalLinesCount - outroCode.split("\n").length + line, column: 0 },
+        original: { line: 1, column: 0 },
+      });
+    }
+    mapData.setSourceContent("cross-test:prelude", "// Not available");
+    mapData.setSourceContent("cross-test:outro", "// Not available");
+
+    await Deno.writeTextFile(mapPath, mapData.toString());
 
     return outfile;
   });
@@ -125,10 +139,12 @@ export class NodeLikeRunnerController extends RunnerController {
     const command = new Deno.Command(args[0], {
       args: args.slice(1),
       env: {
-        CROSSTEST_HOST_DATA: JSON.stringify(<ParentData>{
+        CROSSTEST_PARENT_DATA: JSON.stringify({
           file,
+          runtime,
           server: `http://localhost:${this.server.addr.port}`,
-        }),
+          isDebug: isDebug(),
+        } satisfies ParentData),
       },
       stdin: "null",
     });
