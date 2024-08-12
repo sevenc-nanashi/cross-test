@@ -5,7 +5,7 @@
     "dev": "deno test --watch mod.ts"
   },
   "test": {
-    "exclude": ["./example"]
+    "exclude": []
   },
   "imports": {
     "@core/asyncutil": "jsr:@core/asyncutil@^1.0.0",
