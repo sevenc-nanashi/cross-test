@@ -1,34 +1,25 @@
-import { crossTestRunner } from "./crossTestRunner.ts";
-import type { crossTestHost } from "./crossTestHost.ts";
-
-const maybeCrossTestHost = await import("./crossTestHost.ts")
-  .then((m) => m.crossTestHost as typeof crossTestHost)
-  .catch((e) => {
-    return () => {
-      throw new Error(
-        `Unavailable in this context, possibly library bug: ${e}`,
-      );
-    };
-  });
+import { crossTestRunner as nodeRunner } from "./runtimes/nodeLikeRunner.ts";
+import * as host from "./host.deno.ts";
 
 export type Runtime = "node" | "browser" | "deno" | "cfWorkers" | "bun";
 export type TestOptions = {
   runtimes: Runtime[];
 };
 
-export const createCrossTest = (file: string, options: TestOptions) => {
+export const createCrossTest = async (file: string, options: TestOptions) => {
   if (typeof Deno !== "undefined" && Deno.version) {
-    if (
-      Deno.permissions.querySync({ name: "read", path: "<PWD>" }).state !==
-      "granted"
-    ) {
-      throw new Error("You need --allow-read to run tests");
-    }
-    return maybeCrossTestHost({
+    const key = "crossTestHost" as string;
+    // @ts-expect-error Some hack to remove esbuild warning
+    return await host[key]({
       file,
       options,
     });
   }
 
-  return crossTestRunner();
+  // @ts-expect-error Use if `process` is defined to check if we are in node
+  if (typeof process !== "undefined") {
+    return nodeRunner();
+  }
+
+  throw new Error("Unsupported runtime");
 };

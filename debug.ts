@@ -15,5 +15,5 @@ export const debug = (...args: unknown[]) => {
   if (!isDebug()) {
     return;
   }
-  console.log(`[anytest debug]`, ...args);
+  console.warn(`[crosstest debug]`, ...args);
 };

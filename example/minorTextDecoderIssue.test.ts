@@ -11,8 +11,8 @@
 import { createCrossTest } from "../crossTest.ts";
 import { assertEquals } from "jsr:@std/assert";
 
-const crossTest = createCrossTest(import.meta.url, {
-  runtimes: ["deno", "node", "bun", "cfWorkers"],
+const crossTest = await createCrossTest(import.meta.url, {
+  runtimes: ["deno", "node", "bun"],
 });
 
 Deno.test(
