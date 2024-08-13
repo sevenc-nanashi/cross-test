@@ -3,9 +3,13 @@
 Cross-test is a test runner for Deno that allows you to run tests in multiple
 JS runtimes.
 
-> [!NOTE]
-> This project emulates Cloudflare workers by restricting some functions.
-> This does not guarantee that the code will run in Cloudflare workers.
+## Supported runtimes
+
+- Deno
+- Node.js
+- Bun
+- Workerd (aka: Cloudflare Workers)
+- Browser (coming soon)
 
 ## Installation
 
@@ -19,7 +23,7 @@ $ deno add @sevenc-nanashi/cross-test
 import { createCrossTest } from "@sevenc-nanashi/cross-test";
 
 const crossTest = createCrossTest({
-  runtimes: ["deno", "node", "bun", "cfWorkers"],
+  runtimes: ["deno", "node", "bun", "workerd"],
 });
 ```
 

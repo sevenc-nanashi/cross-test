@@ -2,16 +2,20 @@
  * @module
  */
 
+import { getEnv } from "@cross/env";
 import { createCrossTest } from "../crossTest.ts";
-import { assert, assertEquals } from "jsr:@std/assert";
+import { assert } from "jsr:@std/assert";
 
 const crossTest = await createCrossTest(import.meta.url, {
-  runtimes: ["deno", "browser"],
+  runtimes: ["deno", "node", "bun", "workerd"],
 });
 
 Deno.test(
-  "Use node only API",
+  "Failing: Use node only API",
+  {
+    ignore: !!getEnv("CROSSTEST_RUN_FAILING_TESTS"),
+  },
   crossTest(async () => {
-    assert(location)
+    assert(location);
   }),
 );
