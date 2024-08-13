@@ -296,6 +296,10 @@ export type ToRunnerMessage =
 
 const instances: RunnerController[] = [];
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+};
+
 export abstract class RunnerController {
   tests = new Map<
     number,
@@ -328,6 +332,8 @@ export abstract class RunnerController {
     | Lock<ReadableStreamDefaultController<Uint8Array>>
     | undefined;
 
+  panicked: Error | undefined;
+
   constructor(runtime: Runtime) {
     this.runtime = runtime;
 
@@ -337,6 +343,7 @@ export abstract class RunnerController {
           return new Response(this.messageStream, {
             headers: {
               "Content-Type": "plain/text",
+              ...corsHeaders,
             },
           });
         }
@@ -346,15 +353,26 @@ export abstract class RunnerController {
 
             this.onMessage(data);
 
-            return new Response(null, { status: 204 });
+            return new Response(null, {
+              status: 204,
+              headers: {
+                ...corsHeaders,
+              },
+            });
           } catch (e) {
             this.server.shutdown();
             await this.cleanup(e);
-            return new Response(e.message, { status: 500 });
+            return new Response(e.message, {
+              status: 500,
+              headers: { ...corsHeaders },
+            });
           }
         }
         default:
-          return new Response(null, { status: 405 });
+          return new Response(null, {
+            status: 405,
+            headers: { ...corsHeaders },
+          });
       }
     });
     this.messageStreamPromise = Promise.withResolvers();
@@ -377,7 +395,8 @@ export abstract class RunnerController {
   }
 
   protected async panic(e: Error) {
-    debug(`Panic: ${e.stack}`);
+    debug(`Panic: ${e}`);
+    this.panicked = e;
     for (const { reject } of this.runnerStepPromises.values()) {
       reject(e);
     }
@@ -406,6 +425,9 @@ export abstract class RunnerController {
   }
 
   async runTest(testId: number, context: Deno.TestContext) {
+    if (this.panicked) {
+      throw this.panicked;
+    }
     this.send({ type: "run", testId });
 
     const { promise, resolve, reject } = Promise.withResolvers<void>();
@@ -416,10 +438,6 @@ export abstract class RunnerController {
       reject,
     });
     await promise;
-  }
-
-  startTest(testId: number) {
-    this.send({ type: "run", testId });
   }
 
   onMessage(data: ToHostMessage) {

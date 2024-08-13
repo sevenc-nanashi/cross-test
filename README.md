@@ -9,7 +9,7 @@ JS runtimes.
 - Node.js
 - Bun
 - Workerd (aka: Cloudflare Workers)
-- Browser (coming soon)
+- Browser
 
 ## Installation
 

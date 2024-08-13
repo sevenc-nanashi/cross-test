@@ -1,5 +1,6 @@
 import type { TestOptions } from "./crossTest.ts";
 import { debug } from "./debug.ts";
+import { BrowserRunnerController } from "./runtimes/browser.ts";
 import { NodeLikeRunnerController } from "./runtimes/nodeLike.ts";
 import { WorkerdRunnerController } from "./runtimes/workerd.ts";
 
@@ -8,7 +9,7 @@ type Controllers = {
   node: NodeLikeRunnerController;
   bun: NodeLikeRunnerController;
   workerd: WorkerdRunnerController;
-  browser: undefined;
+  browser: BrowserRunnerController;
 };
 
 export const crossTestHost = async ({
@@ -33,6 +34,9 @@ export const crossTestHost = async ({
       }
       case "workerd":
         controllers[runtime] = await WorkerdRunnerController.create(file);
+        break;
+      case "browser":
+        controllers[runtime] = await BrowserRunnerController.create(file);
         break;
       default:
         throw new Error(`Unsupported runtime: ${runtime}`);
