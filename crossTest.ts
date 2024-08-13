@@ -1,7 +1,7 @@
 import { crossTestRunner } from "./runtimes/runner.ts";
 import * as host from "./host.deno.ts";
 
-export type Runtime = "node" | "browser" | "deno" | "cfWorkers" | "bun";
+export type Runtime = "node" | "browser" | "deno" | "workerd" | "bun";
 export type TestOptions = {
   runtimes: Runtime[];
 };

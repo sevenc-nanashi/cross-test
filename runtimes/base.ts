@@ -1,7 +1,10 @@
-import { dirname, fromFileUrl } from "@std/path";
-import { debug } from "../debug.ts";
+import { dirname, fromFileUrl, join } from "@std/path";
+import * as esbuild from "esbuild";
+import { debug, isDebug } from "../debug.ts";
 import { Lock } from "@core/asyncutil/lock";
 import type { Runtime } from "../crossTest.ts";
+import { denoPlugins } from "@luca/esbuild-deno-loader";
+import { SourceMapConsumer, SourceMapGenerator } from "source-map";
 
 export type DenoTestArgs =
   | [t: Deno.TestDefinition]
@@ -16,12 +19,6 @@ export type DenoTestArgs =
       options: Omit<Deno.TestDefinition, "fn">,
       fn: Deno.TestStepDefinition["fn"],
     ];
-
-const exists = async (path: string): Promise<boolean> => {
-  return await Deno.stat(fromFileUrl(path))
-    .then(() => true)
-    .catch(() => false);
-};
 
 let distRoot: string | undefined;
 export const createDistRoot = async () => {
@@ -51,20 +48,175 @@ export const createDistRoot = async () => {
 
   return distRoot;
 };
-export const findDenoJson = async (
+
+const looseExists = async (
   path: string,
-): Promise<string | undefined> => {
-  if (await exists(`${path}/deno.jsonc`)) {
-    return fromFileUrl(`${path}/deno.jsonc`);
+  options: {
+    isFile?: boolean;
+    isDirectory?: boolean;
+  } = {},
+) => {
+  try {
+    const stat = await Deno.stat(path);
+    if (options.isFile && !stat.isFile) {
+      return false;
+    }
+    if (options.isDirectory && !stat.isDirectory) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
   }
-  if (await exists(`${path}/deno.json`)) {
-    return fromFileUrl(`${path}/deno.json`);
+};
+
+export const findDenoJson = async (
+  pathOrUrl: string,
+): Promise<string | undefined> => {
+  const path = pathOrUrl.includes("://") ? fromFileUrl(pathOrUrl) : pathOrUrl;
+  if (await looseExists(`${path}/deno.jsonc`, { isFile: true })) {
+    return `${path}/deno.jsonc`;
+  }
+  if (await looseExists(`${path}/deno.json`, { isFile: true })) {
+    return `${path}/deno.json`;
   }
   if (dirname(path) === path) {
     return undefined;
   }
   return await findDenoJson(dirname(path));
 };
+
+const jsCache = new Lock(new Map<string, string>());
+
+const hash = async (data: string) => {
+  const encoder = new TextEncoder();
+  const dataBuffer = encoder.encode(data);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", dataBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+};
+
+let esbuildSetup = false;
+export const setupEsbuild = () => {
+  if (esbuildSetup) {
+    return;
+  }
+  globalThis.addEventListener("unload", () => {
+    debug("Stopping esbuild");
+    esbuild.stop();
+  });
+  esbuildSetup = true;
+};
+
+export const basePrepareJs = async (
+  file: string,
+  target: string,
+  extras: {
+    header?: string;
+    prelude?: string;
+    outro?: string;
+    footer?: string;
+  },
+) =>
+  await jsCache.lock(async (map) => {
+    const key = `${file}-${target}`;
+    const cached = map.get(key);
+    if (cached) {
+      debug(`Cache hit: ${file} -> ${cached}`);
+      return cached;
+    }
+    debug(`Cache miss: ${file}`);
+    const denoJsonPath = await findDenoJson(file);
+    const distRoot = await createDistRoot();
+
+    let header = extras.header ?? "";
+    if (extras.prelude) {
+      const minifiedPrelude = await esbuild
+        .transform(extras.prelude, {
+          minify: !isDebug(),
+        })
+        .then((result) => result.code);
+      header += "\n" + minifiedPrelude;
+    }
+    let footer = extras.footer ?? "";
+
+    if (extras.outro) {
+      const minifiedOutro = await esbuild
+        .transform(extras.outro, {
+          minify: !isDebug(),
+        })
+        .then((result) => result.code);
+      footer = minifiedOutro + "\n" + footer;
+    }
+
+    const outfile = join(distRoot, `${await hash(file)}-${target}.mjs`);
+    debug(`deno.json/deno.jsonc path: ${denoJsonPath}`);
+    setupEsbuild();
+    await esbuild.build({
+      entryPoints: [file],
+      format: "esm",
+      bundle: true,
+      sourcemap: true,
+      minify: !isDebug(),
+      outfile,
+      banner: {
+        js: header,
+      },
+      footer: {
+        js: footer,
+      },
+      plugins: [
+        {
+          name: "clearDenoTs",
+          setup(build) {
+            // deno-lint-ignore require-await
+            build.onLoad({ filter: /\.deno\.ts$/ }, async (_args) => {
+              return {
+                contents: "export {}",
+                loader: "ts",
+              };
+            });
+          },
+        },
+        ...denoPlugins({
+          configPath: denoJsonPath,
+        }),
+      ],
+    });
+    debug(`Prepared: ${file} -> ${outfile}`);
+
+    const mapPath = `${outfile}.map`;
+    const mapData = SourceMapGenerator.fromSourceMap(
+      await new SourceMapConsumer(JSON.parse(await Deno.readTextFile(mapPath))),
+    );
+    for (let line = 0; line < header.split("\n").length; line++) {
+      mapData.addMapping({
+        source: "cross-test:header",
+        generated: { line: line + 1, column: 0 },
+        original: { line: 1, column: 0 },
+      });
+    }
+    const finalLines = await Deno.readTextFile(outfile);
+    const finalLinesCount = finalLines.split("\n").length;
+    for (let line = 0; line < footer.split("\n").length; line++) {
+      mapData.addMapping({
+        source: "cross-test:footer",
+        generated: {
+          line: finalLinesCount - footer.split("\n").length + line,
+          column: 0,
+        },
+        original: { line: 1, column: 0 },
+      });
+    }
+    mapData.setSourceContent("cross-test:header", "// Not available");
+    mapData.setSourceContent("cross-test:footer", "// Not available");
+
+    await Deno.writeTextFile(mapPath, mapData.toString());
+
+    map.set(key, outfile);
+
+    return outfile;
+  });
 
 export type SerializedError =
   | {
@@ -87,6 +239,13 @@ const deserializeError = (error: SerializedError): Error => {
     return e;
   }
   return new Error(String(error.value));
+};
+
+export type InitialParentData = {
+  runtime: Runtime;
+  file: string;
+  server: string;
+  isDebug: boolean;
 };
 export type ToHostMessage =
   | (
@@ -223,7 +382,10 @@ export abstract class RunnerController {
     await this.cleanup(e);
   }
 
-  abstract cleanup(e: Error | undefined): Promise<void>;
+  async cleanup(_e: Error | undefined): Promise<void> {
+    this.server.shutdown();
+    await this.send({ type: "exit" });
+  }
   protected async send(data: ToRunnerMessage) {
     if (!this.messageStreamController) {
       throw new Error("Stream controller not initialized");

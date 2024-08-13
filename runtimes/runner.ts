@@ -4,7 +4,7 @@ import type {
   ToHostMessage,
   ToRunnerMessage,
 } from "./base.ts";
-import type { ParentData } from "./nodeLike.ts";
+import type { InitialParentData } from "./base.ts";
 
 let globalId = 0;
 
@@ -60,11 +60,11 @@ export const prelude = () => {
       const mockTest = (...args: DenoTestArgs) => {
         const { name, options, fn } = resolveTestArgs(args);
         const wrappedFn = fn as Deno.TestStepDefinition["fn"] & {
-          __anytestName: string;
-          __anytestOptions: Omit<Deno.TestDefinition, "name" | "fn">;
+          __crosstestName: string;
+          __crosstestOptions: Omit<Deno.TestDefinition, "name" | "fn">;
         };
-        wrappedFn.__anytestName = name;
-        wrappedFn.__anytestOptions = options;
+        wrappedFn.__crosstestName = name;
+        wrappedFn.__crosstestOptions = options;
       };
       mockTest.only = function (
         this: typeof Deno.test,
@@ -82,7 +82,7 @@ export const prelude = () => {
       return mockTest;
     },
 
-    outro: async (parentData: ParentData) => {
+    outro: async (parentData: InitialParentData) => {
       const sendToHost = async (data: ToHostMessage) => {
         return await fetch(parentData.server, {
           method: "POST",
@@ -92,12 +92,7 @@ export const prelude = () => {
 
       const debug = parentData.isDebug
         ? (message: string) => {
-            console.log(
-              `[crosstest@${
-                // @ts-expect-error Bun specific
-                typeof Bun !== "undefined" ? "bun" : "node"
-              } debug] ${message}`,
-            );
+            console.log(`[crosstest@${parentData.runtime} debug] ${message}`);
           }
         : () => {};
 

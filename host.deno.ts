@@ -1,13 +1,14 @@
 import type { TestOptions } from "./crossTest.ts";
 import { debug } from "./debug.ts";
 import { NodeLikeRunnerController } from "./runtimes/nodeLike.ts";
+import { WorkerdRunnerController } from "./runtimes/workerd.ts";
 
 type Controllers = {
   deno: undefined;
   node: NodeLikeRunnerController;
   bun: NodeLikeRunnerController;
+  workerd: WorkerdRunnerController;
   browser: undefined;
-  cfWorkers: undefined;
 };
 
 export const crossTestHost = async ({
@@ -30,6 +31,11 @@ export const crossTestHost = async ({
         );
         break;
       }
+      case "workerd":
+        controllers[runtime] = await WorkerdRunnerController.create(file);
+        break;
+      default:
+        throw new Error(`Unsupported runtime: ${runtime}`);
     }
   }
 
@@ -49,12 +55,7 @@ export const crossTestHost = async ({
               if (!controllers[runtime]) {
                 throw new Error(`No controller for ${runtime}, unreachable`);
               }
-              switch (runtime) {
-                case "node":
-                case "bun":
-                  await controllers[runtime].runTest(testId, t);
-                  break;
-              }
+              await controllers[runtime].runTest(testId, t);
             },
           );
         }
