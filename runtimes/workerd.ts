@@ -1,4 +1,9 @@
-import { basePrepareJs, RunnerController } from "./base.ts";
+import {
+  basePrepareJs,
+  createDistRoot,
+  deserializeError,
+  RunnerController,
+} from "./base.ts";
 import { TextLineStream } from "@std/streams";
 import dir from "dir/mod.ts";
 import { prelude } from "./runner.ts";
@@ -24,10 +29,21 @@ const prepareJs = async (file: string) => {
     `}}`,
   ].join("\n");
 
-  return await basePrepareJs(file, "workerd", {
+  const outPath = await basePrepareJs(file, "workerd", {
     prelude: preludeCode,
     outro: outroCode,
   });
+  debug(`Overwriting imports in ${outPath}`);
+  let content = await Deno.readTextFile(outPath);
+  const imports: string[] = [];
+  content = content.replace(/(?<=^|;)import[{ ].+?(;|$)/gm, (match) => {
+    imports.push(match);
+    console.warn(`Removing import: ${match}`);
+    return "";
+  });
+  await Deno.writeTextFile(outPath, content);
+
+  return outPath;
 };
 
 export class WorkerdRunnerController extends RunnerController {
@@ -35,8 +51,7 @@ export class WorkerdRunnerController extends RunnerController {
 
   static async create(file: string) {
     const path = await prepareJs(file);
-    const script = await Deno.readTextFile(path);
-    const workerd = await Workerd.create(script);
+    const workerd = await Workerd.create(path);
 
     return new WorkerdRunnerController(file, workerd);
   }
@@ -54,8 +69,8 @@ export class WorkerdRunnerController extends RunnerController {
   }
 
   async cleanup(e: Error | undefined): Promise<void> {
-    super.cleanup(e);
     await this.workerd.kill();
+    super.cleanup(e);
   }
 }
 
@@ -112,6 +127,7 @@ const updateWorkerdManager = async (path: string) => {
   }).spawn().status;
 };
 
+let isWorkerdManagerDead = false;
 const getWorkerdManager = async () =>
   await workerdManager.lock(async (manager): Promise<Deno.ChildProcess> => {
     if (await manager.get()) {
@@ -148,6 +164,9 @@ const getWorkerdManager = async () =>
     const command = new Deno.Command("npm", {
       args: ["run", "start"],
       cwd: workerdManagerDir,
+      env: {
+        CROSSTEST_TEMPDIST: await createDistRoot(),
+      },
       stdin: "piped",
       stdout: "piped",
     });
@@ -167,11 +186,16 @@ const getWorkerdManager = async () =>
               throw new Error(`Invalid nonce: ${data.nonce}`);
             }
             workerdManagerMesasgePromises.delete(data.nonce);
-            promise.resolve(data);
+            if (data.type === "error") {
+              promise.reject(deserializeError(data.error));
+            } else {
+              promise.resolve(data);
+            }
           },
         }),
       );
     workerdManagerProcess.status.then(() => {
+      isWorkerdManagerDead = true;
       for (const { reject } of workerdManagerMesasgePromises.values()) {
         reject(new Error("Workerd manager died"));
       }
@@ -193,6 +217,9 @@ const sendToWorkerdManager = async <M extends ToMfManagerMessage>(
   data: M,
 ): Promise<FromMfManagerMessage & { type: M["type"] }> => {
   return await workerdManagerStdin.lock(async () => {
+    if (isWorkerdManagerDead) {
+      throw new Error("Workerd manager is dead");
+    }
     const nonce = crypto.randomUUID();
     const manager = await getWorkerdManager();
     const writer = manager.stdin.getWriter();
@@ -216,8 +243,8 @@ const sendToWorkerdManager = async <M extends ToMfManagerMessage>(
 class Workerd {
   id: string;
 
-  static async create(script: string) {
-    const result = await sendToWorkerdManager({ type: "new", script });
+  static async create(path: string) {
+    const result = await sendToWorkerdManager({ type: "new", path });
     return new Workerd(result.id);
   }
 

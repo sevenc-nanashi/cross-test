@@ -22,6 +22,7 @@ export const debug = (...args: unknown[]) => {
   const maxLength = parseInt(getEnv("CROSSTEST_DEBUG_MAX_LENGTH") ?? "256");
   if (formatted.length > maxLength) {
     console.log(formatted.slice(0, maxLength) + "...");
+  } else {
+    console.log(formatted);
   }
-  console.log(formatted);
 };

@@ -10,11 +10,13 @@ import { Miniflare } from "miniflare";
 import { getPort } from "get-port-please";
 import process from "node:process";
 import readline from "node:readline";
-import type { InitialParentData } from "./base.ts";
+import type { InitialParentData, SerializedError } from "./base.ts";
 
 const rl = readline.createInterface({
   input: process.stdin,
 });
+
+process.chdir(process.env.CROSSTEST_TEMPDIST!);
 
 const mfInstances = new Map<string, Miniflare>();
 const handleMfManagerMessage = async (
@@ -25,9 +27,9 @@ const handleMfManagerMessage = async (
       const port = await getPort();
       const mf = new Miniflare({
         modules: true,
-        script: message.script,
         compatibilityFlags: [],
         port,
+        scriptPath: message.path
       });
       const id = crypto.randomUUID();
       mfInstances.set(id, mf);
@@ -59,7 +61,6 @@ const handleMfManagerMessage = async (
 
     case "exit":
       if (mfInstances.size > 0) {
-        console.warn(`There are still ${mfInstances.size} running instances`);
         for (const mf of mfInstances.values()) {
           await mf.dispose();
         }
@@ -76,15 +77,45 @@ const handleMfManagerMessage = async (
 
 for await (const line of rl) {
   const message: { nonce: string; data: ToMfManagerMessage } = JSON.parse(line);
-  const response = await handleMfManagerMessage(message.data);
-  console.log("!" + JSON.stringify({ nonce: message.nonce, ...response }));
+  try {
+    const response = await handleMfManagerMessage(message.data);
+    console.log("!" + JSON.stringify({ nonce: message.nonce, ...response }));
+  } catch (error) {
+    if (error instanceof Error) {
+      console.log(
+        "!" +
+          JSON.stringify({
+            nonce: message.nonce,
+            type: "error",
+            error: {
+              type: "error",
+              message: error.message,
+              name: error.name,
+              stack: error.stack,
+            },
+          } satisfies FromMfManagerMessageError & { nonce: string }),
+      );
+    } else {
+      console.log(
+        "!" +
+          JSON.stringify({
+            nonce: message.nonce,
+            type: "error",
+            error: {
+              type: "other",
+              value: error,
+            },
+          }),
+      );
+    }
+  }
 }
 throw new Error("Unreachable");
 
 export type ToMfManagerMessage =
   | {
       type: "new";
-      script: string;
+      path: string;
     }
   | {
       type: "start";
@@ -113,3 +144,8 @@ export type FromMfManagerMessage =
   | {
       type: "exit";
     };
+
+export type FromMfManagerMessageError = {
+  type: "error";
+  error: SerializedError;
+};

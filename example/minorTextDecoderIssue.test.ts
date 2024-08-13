@@ -8,9 +8,9 @@
  * TODO: Find better example in case the issue is fixed.
  */
 
-import { getEnv } from "@cross/env";
 import { createCrossTest } from "../crossTest.ts";
 import { assertEquals } from "jsr:@std/assert";
+import { shouldRun } from "./shouldRun.ts";
 
 const crossTest = await createCrossTest(import.meta.url, {
   runtimes: ["deno", "node", "bun", "workerd"],
@@ -19,7 +19,7 @@ const crossTest = await createCrossTest(import.meta.url, {
 Deno.test(
   "Failing: Use textDecoder",
   {
-    ignore: !!getEnv("CROSSTEST_RUN_FAILING_TESTS"),
+    ignore: !shouldRun,
   },
   crossTest(() => {
     const bytes = [147, 250, 150, 123, 140, 234];

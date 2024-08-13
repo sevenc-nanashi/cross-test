@@ -5,10 +5,10 @@
  * So this test is expected to fail in Cloudflare Workers.
  */
 
-import { getEnv } from "@cross/env";
 import { createCrossTest } from "../mod.ts";
 import { assertEquals } from "jsr:@std/assert";
 import { toBase64 } from "npm:fast-base64@^0.1.8";
+import { shouldRun } from "./shouldRun.ts";
 
 const crossTest = await createCrossTest(import.meta.url, {
   runtimes: ["deno", "node", "bun", "workerd"],
@@ -17,7 +17,7 @@ const crossTest = await createCrossTest(import.meta.url, {
 Deno.test(
   "Failing: Use toBase64",
   {
-    ignore: !!getEnv("CROSSTEST_RUN_FAILING_TESTS"),
+    ignore: !shouldRun,
   },
   crossTest(async () => {
     const encoded = new TextEncoder().encode("Hello, World!");

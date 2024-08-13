@@ -1,4 +1,4 @@
-import { dirname, fromFileUrl, join } from "@std/path";
+import { dirname, fromFileUrl, join, toFileUrl } from "@std/path";
 import * as esbuild from "esbuild";
 import { debug, isDebug } from "../debug.ts";
 import { Lock } from "@core/asyncutil/lock";
@@ -33,7 +33,12 @@ export const createDistRoot = async () => {
     }).state === "granted" &&
     Deno.env.get("CROSSTEST_TEMPDIST")
   ) {
-    distRoot = Deno.env.get("CROSSTEST_TEMPDIST")!;
+    distRoot = fromFileUrl(
+      new URL(
+        Deno.env.get("CROSSTEST_TEMPDIST")!,
+        toFileUrl(Deno.cwd() + "/."),
+      ),
+    );
     debug(`Using CROSSTEST_TEMPDIST: ${distRoot}`);
     return distRoot;
   }
@@ -229,7 +234,7 @@ export type SerializedError =
       type: "other";
       value: unknown;
     };
-const deserializeError = (error: SerializedError): Error => {
+export const deserializeError = (error: SerializedError): Error => {
   if (error.type === "error") {
     const actualStacks = error.stack?.split("\n").slice(1) ?? [];
     // Deno cannot show overridden e.stack, so I use message instead to show the original stack
