@@ -360,8 +360,7 @@ export abstract class RunnerController {
               },
             });
           } catch (e) {
-            this.server.shutdown();
-            await this.cleanup(e);
+            await this.panic(e);
             return new Response(e.message, {
               status: 500,
               headers: { ...corsHeaders },
