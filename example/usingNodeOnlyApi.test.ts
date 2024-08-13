@@ -14,7 +14,7 @@ const crossTest = await createCrossTest(import.meta.url, {
 });
 
 Deno.test(
-  "Failing: Use node:fs/promises",
+  "Failing: Using node:fs/promises",
   {
     ignore: !shouldRun,
   },

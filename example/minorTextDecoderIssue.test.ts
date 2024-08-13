@@ -13,11 +13,11 @@ import { assertEquals } from "jsr:@std/assert";
 import { shouldRun } from "./shouldRun.ts";
 
 const crossTest = await createCrossTest(import.meta.url, {
-  runtimes: ["deno", "node", "bun", "workerd"],
+  runtimes: ["deno", "node", "bun", "workerd", "browser"],
 });
 
 Deno.test(
-  "Failing: Use textDecoder",
+  "Failing: Using TextDecoder with shift_jis",
   {
     ignore: !shouldRun,
   },
