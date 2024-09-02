@@ -37,6 +37,7 @@ For GitHub Actions setup:
   uses: actions/cache@v4
   with:
     path: ~/.cache/cross-test/workerd-manager
+    key: ${{ runner.os }}-cross-test-workerd-manager
 - name: Run tests
   run: deno test -A ./example
 ```
