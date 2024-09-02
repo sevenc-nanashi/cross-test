@@ -32,15 +32,6 @@ const prepareJs = async (file: string) => {
     prelude: preludeCode,
     outro: outroCode,
   });
-  debug(`Overwriting imports in ${outPath}`);
-  let content = await Deno.readTextFile(outPath);
-  const imports: string[] = [];
-  content = content.replace(/(?<=^|;)import[{ ].+?(;|$)/gm, (match) => {
-    imports.push(match);
-    console.warn(`Removing import: ${match}`);
-    return "";
-  });
-  await Deno.writeTextFile(outPath, content);
 
   return outPath;
 };
