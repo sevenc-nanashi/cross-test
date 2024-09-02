@@ -4,6 +4,9 @@
   "tasks": {
     "dev": "deno test --watch mod.ts"
   },
+  "publish": {
+    "include": ["*.ts", "deno.jsonc", "runtimes/*.ts", "LICENSE", "README.md"]
+  },
   "test": {
     "exclude": []
   },
