@@ -173,8 +173,8 @@ export const basePrepareJs = async (
       platform: "node",
       define: {
         "import.meta.url": JSON.stringify(file),
-        "import.meta.dirname": JSON.stringify(dirname(file)),
-        "import.meta.filename": JSON.stringify(file),
+        "import.meta.dirname": JSON.stringify(fromFileUrl(dirname(file))),
+        "import.meta.filename": JSON.stringify(fromFileUrl(file)),
       },
       plugins: [
         {

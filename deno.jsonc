@@ -6,7 +6,8 @@
     "generateWorkerdManager": "deno run -A ./tasks/generateWorkerManager.ts"
   },
   "publish": {
-    "include": ["*.ts", "deno.jsonc", "runtimes/*.ts", "LICENSE", "README.md"]
+    "include": ["*.ts", "deno.jsonc", "runtimes/*.ts", "LICENSE", "README.md"],
+    "exclude": ["*.test.ts", "test/", "tasks/"]
   },
   "test": {
     "exclude": []
