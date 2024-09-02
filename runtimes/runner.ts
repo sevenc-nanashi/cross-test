@@ -12,12 +12,12 @@ let globalId = 0;
 
 export const crossTestRegistrar = (): CrossTestRegistrar => {
   return (...args: CrossTestRegistrarArgs) => {
-    let name: string;
+    let _name: string;
     let test: Deno.TestStepDefinition["fn"];
     if (args.length === 2) {
-      [name, test] = args;
+      [_name, test] = args;
     } else if (args.length === 3) {
-      [name, , test] = args;
+      [_name, , test] = args;
     } else {
       throw new Error("Invalid number of arguments");
     }

@@ -170,6 +170,7 @@ export const basePrepareJs = async (
       footer: {
         js: footer,
       },
+      platform: "node",
       plugins: [
         {
           name: "clearDenoTs",
