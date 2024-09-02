@@ -1,6 +1,6 @@
 {
   "name": "@sevenc-nanashi/cross-test",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "tasks": {
     "dev": "deno test --watch mod.ts"
   },
@@ -22,9 +22,9 @@
     "@std/testing": "jsr:@std/testing@^1.0.0",
     "defu": "npm:defu@^6.1.4",
     "dequal": "npm:dequal@^2.0.3",
-    "dir/": "https://deno.land/x/dir@1.5.2/",
     "esbuild": "npm:esbuild@^0.23.0",
     "get-port-please": "npm:get-port-please@^3.1.2",
+    "global-cache-dir": "npm:global-cache-dir@^6.0.0",
     "miniflare": "npm:miniflare@^3.20240806.0",
     "source-map": "npm:source-map@^0.7.4"
   },

@@ -1,17 +1,10 @@
 import {
   basePrepareJs,
-  createDistRoot,
-  deserializeError,
   RunnerController,
 } from "./base.ts";
 import * as astral from "@astral/astral";
-import { TextLineStream } from "@std/streams";
-import dir from "dir/mod.ts";
 import { prelude } from "./runner.ts";
 import { debug, isDebug } from "../debug.ts";
-import type { InitialParentData } from "./base.ts";
-import { join } from "@std/path";
-import { exists } from "@std/fs/exists";
 import { Lock } from "@core/asyncutil/lock";
 import { AsyncValue } from "@core/asyncutil/async-value";
 

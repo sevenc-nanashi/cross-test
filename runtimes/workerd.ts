@@ -5,7 +5,7 @@ import {
   RunnerController,
 } from "./base.ts";
 import { TextLineStream } from "@std/streams";
-import dir from "dir/mod.ts";
+import globalDir from "global-cache-dir";
 import { prelude } from "./runner.ts";
 import { debug, isDebug } from "../debug.ts";
 import type {
@@ -134,8 +134,7 @@ const getWorkerdManager = async () =>
     }
 
     const workerdManagerDir = join(
-      dir("cache")!,
-      "cross-test",
+      await globalDir("cross-test"),
       "workerd-manager",
       `${workerdVersion}-v${workerdManagerVersion}`,
     );
@@ -144,8 +143,8 @@ const getWorkerdManager = async () =>
       await setupWorkerdManager(workerdManagerDir);
     } else {
       const packageJson = join(workerdManagerDir, "package.json");
-      const { workerdManagerVersion: cachedManagerVersion, lastUpdate } = JSON
-        .parse(await Deno.readTextFile(packageJson));
+      const { workerdManagerVersion: cachedManagerVersion, lastUpdate } =
+        JSON.parse(await Deno.readTextFile(packageJson));
       if (cachedManagerVersion !== workerdManagerVersion) {
         await setupWorkerdManager(workerdManagerDir);
       } else if (Date.now() - lastUpdate > 1000 * 60 * 60 * 24 * 7) {
