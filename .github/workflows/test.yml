@@ -35,5 +35,6 @@ jobs:
           cp ./runtimes/workerdManager.generated.ts ./runtimes/workerdManager.generated.ts.bak
           deno task generateWorkerdManager
           diff ./runtimes/workerdManager.generated.ts ./runtimes/workerdManager.generated.ts.bak
+          rm ./runtimes/workerdManager.generated.ts.bak
       - name: Check slow types
         run: deno publish --dry-run
