@@ -3,6 +3,9 @@
 Cross-test is a test runner for Deno that allows you to run tests in multiple JS
 runtimes.
 
+> [!IMPORTANT]
+> This is very experimental plugin; it may not work as expected.
+
 ## Supported runtimes
 
 - Deno

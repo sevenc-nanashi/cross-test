@@ -25,7 +25,7 @@ const calledFrom = new Set<string>();
  * Create a cross-runtime test.
  *
  * > [!NOTE]
- * > You must call this function only once per file.
+ * > You cannot call this function more than once in a file.
  *
  * @param file - The URL of the file where the test is created. You MUST set this to `import.meta.url`.
  * @param options - Options for initializing cross-test.
@@ -37,7 +37,7 @@ export const createCrossTest = async (
   options: TestOptions,
 ): Promise<CrossTestRegistrar> => {
   if (calledFrom.has(file)) {
-    throw new Error("createCrossTest must be called only once per file");
+    throw new Error("createCrossTest can only be called once per file");
   }
   calledFrom.add(file);
 
