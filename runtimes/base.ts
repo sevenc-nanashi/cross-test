@@ -143,10 +143,6 @@ export const basePrepareJs = async (
         .then((result) => result.code);
       header += "\n" + minifiedPrelude;
     }
-    header += ";";
-    header += `import.meta.url = ${JSON.stringify(file)};`;
-    header += `import.meta.dirname = ${JSON.stringify(dirname(file))};`;
-    header += `import.meta.filename = ${JSON.stringify(file)};`;
     let footer = extras.footer ?? "";
 
     if (extras.outro) {
@@ -175,6 +171,11 @@ export const basePrepareJs = async (
         js: footer,
       },
       platform: "node",
+      define: {
+        "import.meta.url": JSON.stringify(file),
+        "import.meta.dirname": JSON.stringify(dirname(file)),
+        "import.meta.filename": JSON.stringify(file),
+      },
       plugins: [
         {
           name: "clearDenoTs",
