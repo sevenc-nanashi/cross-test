@@ -1,3 +1,5 @@
+import type { CrossTestRegistrar } from "../crossTest.ts";
+import type { CrossTestRegistrarArgs } from "../internal.ts";
 import type {
   DenoTestArgs,
   SerializedError,
@@ -8,12 +10,17 @@ import type { InitialParentData } from "./base.ts";
 
 let globalId = 0;
 
-export const crossTestRegistrar = () => {
-  return (
-    _name: string,
-    _options: unknown,
-    test: Deno.TestStepDefinition["fn"],
-  ) => {
+export const crossTestRegistrar = (): CrossTestRegistrar => {
+  return (...args: CrossTestRegistrarArgs) => {
+    let name: string;
+    let test: Deno.TestStepDefinition["fn"];
+    if (args.length === 2) {
+      [name, test] = args;
+    } else if (args.length === 3) {
+      [name, , test] = args;
+    } else {
+      throw new Error("Invalid number of arguments");
+    }
     const localId = globalId++;
     (globalThis as Global).__crosstestRunnerCallbacks.set(localId, test);
   };
@@ -56,32 +63,6 @@ export const prelude = () => {
   };
 
   return {
-    prepareDenoTest: () => {
-      const mockTest = (...args: DenoTestArgs) => {
-        const { name, options, fn } = resolveTestArgs(args);
-        const wrappedFn = fn as Deno.TestStepDefinition["fn"] & {
-          __crosstestName: string;
-          __crosstestOptions: Omit<Deno.TestDefinition, "name" | "fn">;
-        };
-        wrappedFn.__crosstestName = name;
-        wrappedFn.__crosstestOptions = options;
-      };
-      mockTest.only = function (
-        this: typeof Deno.test,
-        ...args: Parameters<(typeof Deno.test)["only"]>
-      ) {
-        return this(...args);
-      };
-      mockTest.ignore = function (
-        this: typeof Deno.test,
-        ...args: Parameters<typeof Deno.test>
-      ) {
-        return this(...args);
-      };
-
-      return mockTest;
-    },
-
     outro: async (parentData: InitialParentData) => {
       const sendToHost = async (data: ToHostMessage) => {
         return await fetch(parentData.server, {
@@ -92,8 +73,8 @@ export const prelude = () => {
 
       const debug = parentData.isDebug
         ? (message: string) => {
-            console.log(`[crosstest@${parentData.runtime} debug] ${message}`);
-          }
+          console.log(`[crosstest@${parentData.runtime} debug] ${message}`);
+        }
         : () => {};
 
       const testContexts = new Map<string, Deno.TestContext>();
@@ -193,11 +174,16 @@ export const prelude = () => {
               if (!test) {
                 throw new Error(`Invalid testId: ${data.testId}`);
               }
-              await test({
-                name: "test",
-                origin: parentData.file,
-                step: testStep.bind({ testId: data.testId, nonce: undefined }),
-              } satisfies Deno.TestContext);
+              await test(
+                {
+                  name: "test",
+                  origin: parentData.file,
+                  step: testStep.bind({
+                    testId: data.testId,
+                    nonce: undefined,
+                  }),
+                } satisfies Deno.TestContext,
+              );
               await sendToHost({
                 type: "pass",
                 testId: data.testId,

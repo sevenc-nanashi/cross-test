@@ -11,14 +11,14 @@ export type DenoTestArgs =
   | [fn: Deno.TestStepDefinition["fn"]]
   | [name: string, fn: Deno.TestStepDefinition["fn"]]
   | [
-      name: string,
-      options: Omit<Deno.TestDefinition, "name" | "fn">,
-      fn: Deno.TestStepDefinition["fn"],
-    ]
+    name: string,
+    options: Omit<Deno.TestDefinition, "name" | "fn">,
+    fn: Deno.TestStepDefinition["fn"],
+  ]
   | [
-      options: Omit<Deno.TestDefinition, "fn">,
-      fn: Deno.TestStepDefinition["fn"],
-    ];
+    options: Omit<Deno.TestDefinition, "fn">,
+    fn: Deno.TestStepDefinition["fn"],
+  ];
 
 let distRoot: string | undefined;
 export const createDistRoot = async () => {
@@ -28,9 +28,9 @@ export const createDistRoot = async () => {
 
   if (
     Deno.permissions.querySync({
-      name: "env",
-      variable: "CROSSTEST_TEMPDIST",
-    }).state === "granted" &&
+        name: "env",
+        variable: "CROSSTEST_TEMPDIST",
+      }).state === "granted" &&
     Deno.env.get("CROSSTEST_TEMPDIST")
   ) {
     distRoot = fromFileUrl(
@@ -225,15 +225,15 @@ export const basePrepareJs = async (
 
 export type SerializedError =
   | {
-      type: "error";
-      name: string;
-      message: string;
-      stack: string | undefined;
-    }
+    type: "error";
+    name: string;
+    message: string;
+    stack: string | undefined;
+  }
   | {
-      type: "other";
-      value: unknown;
-    };
+    type: "other";
+    value: unknown;
+  };
 export const deserializeError = (error: SerializedError): Error => {
   if (error.type === "error") {
     const actualStacks = error.stack?.split("\n").slice(1) ?? [];
@@ -254,45 +254,45 @@ export type InitialParentData = {
 };
 export type ToHostMessage =
   | (
-      | {
-          type: "pass";
-          testId: number;
-        }
-      | {
-          type: "fail";
-          testId: number;
-          error: SerializedError;
-        }
-      | {
-          type: "stepStart";
-          testId: number;
-          parent: string | undefined;
-          ignore: boolean;
-          name: string;
-        }
-      | {
-          type: "stepPass";
-          testId: number;
-          nonce: string;
-        }
-      | {
-          type: "stepFail";
-          testId: number;
-          nonce: string;
-          error: SerializedError;
-        }
-    )
-  | {
-      type: "ready";
-    };
-export type ToRunnerMessage =
-  | {
-      type: "run";
+    | {
+      type: "pass";
       testId: number;
     }
+    | {
+      type: "fail";
+      testId: number;
+      error: SerializedError;
+    }
+    | {
+      type: "stepStart";
+      testId: number;
+      parent: string | undefined;
+      ignore: boolean;
+      name: string;
+    }
+    | {
+      type: "stepPass";
+      testId: number;
+      nonce: string;
+    }
+    | {
+      type: "stepFail";
+      testId: number;
+      nonce: string;
+      error: SerializedError;
+    }
+  )
   | {
-      type: "exit";
-    };
+    type: "ready";
+  };
+export type ToRunnerMessage =
+  | {
+    type: "run";
+    testId: number;
+  }
+  | {
+    type: "exit";
+  };
 
 const instances: RunnerController[] = [];
 
@@ -321,8 +321,8 @@ export abstract class RunnerController {
   hostStepPromises = new Map<string, Promise<boolean>>();
   testStepContexts = new Map<string, Deno.TestContext>();
 
-  readyPromise: { promise: Promise<void>; resolve: () => void } =
-    Promise.withResolvers();
+  readyPromise: { promise: Promise<void>; resolve: () => void } = Promise
+    .withResolvers();
 
   server: Deno.HttpServer<Deno.NetAddr>;
   runtime: Runtime;
@@ -482,18 +482,18 @@ export abstract class RunnerController {
           nonce,
           data.ignore
             ? context.step({
-                name: data.name,
-                ignore: true,
-                fn: async () => {},
-              })
+              name: data.name,
+              ignore: true,
+              fn: async () => {},
+            })
             : context.step({
-                name: data.name,
-                fn: async (t) => {
-                  this.testStepContexts.set(nonce, t);
+              name: data.name,
+              fn: async (t) => {
+                this.testStepContexts.set(nonce, t);
 
-                  await promise;
-                },
-              }),
+                await promise;
+              },
+            }),
         );
         return new Response(
           JSON.stringify({

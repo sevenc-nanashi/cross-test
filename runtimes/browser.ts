@@ -16,10 +16,7 @@ import { Lock } from "@core/asyncutil/lock";
 import { AsyncValue } from "@core/asyncutil/async-value";
 
 const prepareJs = async (file: string) => {
-  const preludeCode = [
-    `const __crosstestPrelude = (${prelude.toString()})()`,
-    "const Deno = { test: __crosstestPrelude.prepareDenoTest() }",
-  ].join("\n");
+  const preludeCode = `const __crosstestPrelude = (${prelude.toString()})()`;
   const outroCode = `window.__crosstestRun = __crosstestPrelude.outro`;
   const outPath = await basePrepareJs(file, "browser", {
     prelude: preludeCode,
@@ -131,6 +128,17 @@ const createPage = async (path: string): Promise<astral.Page> => {
   pages.set(nonce, html);
 
   const page = await browser.newPage();
+  page.addEventListener("console", (msg) => {
+    const text = msg.detail.text;
+    if (text.startsWith("[crosstest@browser debug]")) {
+      debug(text.slice("[crosstest@browser debug]".length).trim());
+    } else {
+      console.log(text);
+    }
+  });
+  page.addEventListener("pageerror", (msg) => {
+    console.error(msg.detail);
+  });
   await page.goto(`http://localhost:${pageServer!.addr.port}/${nonce}`);
   debug(`Page created: http://localhost:${pageServer!.addr.port}/${nonce}`);
 

@@ -34,5 +34,5 @@ export const createCrossTest = async (
     });
   }
 
-  return crossTestRegistrar() as CrossTestRegistrar;
+  return crossTestRegistrar();
 };

@@ -21,10 +21,7 @@ import { AsyncValue } from "@core/asyncutil/async-value";
 const workerdVersion = "latest";
 
 const prepareJs = async (file: string) => {
-  const preludeCode = [
-    `const __crosstestPrelude = (${prelude.toString()})()`,
-    "const Deno = { test: __crosstestPrelude.prepareDenoTest() }",
-  ].join("\n");
+  const preludeCode = `const __crosstestPrelude = (${prelude.toString()})()`;
   const outroCode = [
     `export default { async fetch(__crosstestRequest) {`,
     `await __crosstestPrelude.outro(await __crosstestRequest.json())`,
@@ -140,15 +137,15 @@ const getWorkerdManager = async () =>
       dir("cache")!,
       "cross-test",
       "workerd-manager",
-      `${workerdVersion}-${workerdManagerVersion}`,
+      `${workerdVersion}-v${workerdManagerVersion}`,
     );
     if (!(await exists(workerdManagerDir, { isDirectory: true }))) {
       debug(`Creating workerd manager in ${workerdManagerDir}`);
       await setupWorkerdManager(workerdManagerDir);
     } else {
       const packageJson = join(workerdManagerDir, "package.json");
-      const { workerdManagerVersion: cachedManagerVersion, lastUpdate } =
-        JSON.parse(await Deno.readTextFile(packageJson));
+      const { workerdManagerVersion: cachedManagerVersion, lastUpdate } = JSON
+        .parse(await Deno.readTextFile(packageJson));
       if (cachedManagerVersion !== workerdManagerVersion) {
         await setupWorkerdManager(workerdManagerDir);
       } else if (Date.now() - lastUpdate > 1000 * 60 * 60 * 24 * 7) {

@@ -2,18 +2,16 @@ import { Lock } from "@core/asyncutil/lock";
 import type { Runtime } from "../crossTest.ts";
 import {
   basePrepareJs,
-  RunnerController,
   type InitialParentData,
+  RunnerController,
 } from "./base.ts";
 import { isDebug } from "../debug.ts";
 import { prelude } from "./runner.ts";
 
 const prepareJs = async (file: string) => {
-  const preludeCode = [
-    `const __crosstestPrelude = (${prelude.toString()})()`,
-    "const Deno = { test: __crosstestPrelude.prepareDenoTest() }",
-  ].join("\n");
-  const outroCode = `__crosstestPrelude.outro(JSON.parse(process.env.CROSSTEST_PARENT_DATA))`;
+  const preludeCode = `const __crosstestPrelude = (${prelude.toString()})()`;
+  const outroCode =
+    `__crosstestPrelude.outro(JSON.parse(process.env.CROSSTEST_PARENT_DATA))`;
 
   return await basePrepareJs(file, "nodeLike", {
     prelude: preludeCode,
@@ -52,12 +50,14 @@ export class NodeLikeRunnerController extends RunnerController {
     const command = new Deno.Command(args[0], {
       args: args.slice(1),
       env: {
-        CROSSTEST_PARENT_DATA: JSON.stringify({
-          file,
-          runtime,
-          server: `http://localhost:${this.server.addr.port}`,
-          isDebug: isDebug(),
-        } satisfies InitialParentData),
+        CROSSTEST_PARENT_DATA: JSON.stringify(
+          {
+            file,
+            runtime,
+            server: `http://localhost:${this.server.addr.port}`,
+            isDebug: isDebug(),
+          } satisfies InitialParentData,
+        ),
       },
       stdin: "null",
     });

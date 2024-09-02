@@ -1,5 +1,6 @@
 import type { CrossTestRegistrar, TestOptions } from "./crossTest.ts";
 import { debug } from "./debug.ts";
+import type { CrossTestRegistrarArgs } from "./internal.ts";
 import { BrowserRunnerController } from "./runtimes/browser.ts";
 import { NodeLikeRunnerController } from "./runtimes/nodeLike.ts";
 import { WorkerdRunnerController } from "./runtimes/workerd.ts";
@@ -45,15 +46,7 @@ export const crossTestHost = async ({
 
   let nextTestId = 0;
 
-  return (
-    ...args:
-      | [name: string, fn: Deno.TestDefinition["fn"]]
-      | [
-          name: string,
-          options: Omit<Deno.TestDefinition, "name" | "fn" | "sanitizeOps">,
-          fn: Deno.TestStepDefinition["fn"],
-        ]
-  ) => {
+  return (...args: CrossTestRegistrarArgs) => {
     let name: string;
     let testOptions: Omit<Deno.TestDefinition, "name" | "fn" | "sanitizeOps">;
     let testFn: Deno.TestStepDefinition["fn"];

@@ -1,7 +1,7 @@
 # Cross-test / Cross test runner for Deno
 
-Cross-test is a test runner for Deno that allows you to run tests in multiple
-JS runtimes.
+Cross-test is a test runner for Deno that allows you to run tests in multiple JS
+runtimes.
 
 ## Supported runtimes
 
@@ -33,5 +33,5 @@ crossTest("My Test", () => {
 
 ## License
 
-This project is licensed under the MIT License.
-See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file
+for details.

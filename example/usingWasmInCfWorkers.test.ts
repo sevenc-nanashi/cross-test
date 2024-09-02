@@ -17,7 +17,14 @@ const crossTest = await createCrossTest(import.meta.url, {
 // 0000000: 0061 736d              ; WASM_BINARY_MAGIC
 // 0000004: 0100 0000              ; WASM_BINARY_VERSION
 const minimumWasm = new Uint8Array([
-  0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
+  0x00,
+  0x61,
+  0x73,
+  0x6d,
+  0x01,
+  0x00,
+  0x00,
+  0x00,
 ]);
 
 crossTest(

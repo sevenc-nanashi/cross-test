@@ -29,7 +29,7 @@ const handleMfManagerMessage = async (
         modules: true,
         compatibilityFlags: [],
         port,
-        scriptPath: message.path
+        scriptPath: message.path,
       });
       const id = crypto.randomUUID();
       mfInstances.set(id, mf);
@@ -84,16 +84,18 @@ for await (const line of rl) {
     if (error instanceof Error) {
       console.log(
         "!" +
-          JSON.stringify({
-            nonce: message.nonce,
-            type: "error",
-            error: {
+          JSON.stringify(
+            {
+              nonce: message.nonce,
               type: "error",
-              message: error.message,
-              name: error.name,
-              stack: error.stack,
-            },
-          } satisfies FromMfManagerMessageError & { nonce: string }),
+              error: {
+                type: "error",
+                message: error.message,
+                name: error.name,
+                stack: error.stack,
+              },
+            } satisfies FromMfManagerMessageError & { nonce: string },
+          ),
       );
     } else {
       console.log(
@@ -114,36 +116,36 @@ throw new Error("Unreachable");
 
 export type ToMfManagerMessage =
   | {
-      type: "new";
-      path: string;
-    }
+    type: "new";
+    path: string;
+  }
   | {
-      type: "start";
-      id: string;
-      initialParentData: InitialParentData;
-    }
+    type: "start";
+    id: string;
+    initialParentData: InitialParentData;
+  }
   | {
-      type: "kill";
-      id: string;
-    }
+    type: "kill";
+    id: string;
+  }
   | {
-      type: "exit";
-    };
+    type: "exit";
+  };
 
 export type FromMfManagerMessage =
   | {
-      type: "new";
-      id: string;
-    }
+    type: "new";
+    id: string;
+  }
   | {
-      type: "start";
-    }
+    type: "start";
+  }
   | {
-      type: "kill";
-    }
+    type: "kill";
+  }
   | {
-      type: "exit";
-    };
+    type: "exit";
+  };
 
 export type FromMfManagerMessageError = {
   type: "error";
