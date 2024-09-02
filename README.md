@@ -17,6 +17,26 @@ runtimes.
 $ deno add @sevenc-nanashi/cross-test
 ```
 
+For GitHub Actions setup:
+```yml
+- name: Checkout
+  uses: actions/checkout@v4
+- name: Setup Deno
+  uses: denoland/setup-deno@v1
+  with:
+    deno-version: v1.x
+- name: Setup Node
+  uses: actions/setup-node@v4
+  with:
+    node-version: 20
+- name: Setup Bun
+  uses: oven-sh/setup-bun@v2
+  with:
+    bun-version: latest
+- name: Run tests
+  run: deno test -A ./example
+```
+
 ## Usage
 
 ```ts
