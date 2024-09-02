@@ -33,6 +33,10 @@ For GitHub Actions setup:
   uses: oven-sh/setup-bun@v2
   with:
     bun-version: latest
+- name: Cache
+  uses: actions/cache@v4
+  with:
+    path: ~/.cache/cross-test/workerd-manager
 - name: Run tests
   run: deno test -A ./example
 ```
