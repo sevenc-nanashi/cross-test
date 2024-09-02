@@ -7,6 +7,7 @@
       "jsr:@cross/deepmerge@^1.0.0": "jsr:@cross/deepmerge@1.0.0",
       "jsr:@cross/env@^1.0.0": "jsr:@cross/env@1.0.2",
       "jsr:@cross/env@^1.0.2": "jsr:@cross/env@1.0.2",
+      "jsr:@cross/fs": "jsr:@cross/fs@0.1.11",
       "jsr:@cross/fs@^0.1.11": "jsr:@cross/fs@0.1.11",
       "jsr:@cross/runtime@^1.0.0": "jsr:@cross/runtime@1.0.0",
       "jsr:@cross/utils@^0.14.0": "jsr:@cross/utils@0.14.0",

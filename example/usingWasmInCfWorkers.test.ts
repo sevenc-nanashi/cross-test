@@ -20,13 +20,13 @@ const minimumWasm = new Uint8Array([
   0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
 ]);
 
-Deno.test(
+crossTest(
   "Failing: Using WebAssembly",
   {
     ignore: !shouldRun,
   },
-  crossTest(async () => {
+  async () => {
     const wasm = await WebAssembly.instantiate(minimumWasm);
     assertEquals(typeof wasm, "object");
-  }),
+  },
 );

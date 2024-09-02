@@ -18,6 +18,8 @@ import { exists } from "@std/fs/exists";
 import { Lock } from "@core/asyncutil/lock";
 import { AsyncValue } from "@core/asyncutil/async-value";
 
+const workerdVersion = "latest";
+
 const prepareJs = async (file: string) => {
   const preludeCode = [
     `const __crosstestPrelude = (${prelude.toString()})()`,
@@ -112,7 +114,7 @@ const setupWorkerdManager = async (path: string) => {
       },
     }),
   );
-  debug(`Installing workerd manager in ${path}`);
+  console.log(`[cross-test] Installing workerd manager in ${path}`);
   await new Deno.Command("npm", {
     args: ["install"],
     cwd: path,
@@ -120,7 +122,7 @@ const setupWorkerdManager = async (path: string) => {
   }).spawn().status;
 };
 const updateWorkerdManager = async (path: string) => {
-  debug(`Updating workerd manager in ${path}`);
+  console.log(`[cross-test] Updating workerd manager in ${path}`);
   await new Deno.Command("npm", {
     args: ["update"],
     cwd: path,
@@ -138,7 +140,7 @@ const getWorkerdManager = async () =>
       dir("cache")!,
       "cross-test",
       "workerd-manager",
-      "latest",
+      `${workerdVersion}-${workerdManagerVersion}`,
     );
     if (!(await exists(workerdManagerDir, { isDirectory: true }))) {
       debug(`Creating workerd manager in ${workerdManagerDir}`);
@@ -149,8 +151,14 @@ const getWorkerdManager = async () =>
         JSON.parse(await Deno.readTextFile(packageJson));
       if (cachedManagerVersion !== workerdManagerVersion) {
         await setupWorkerdManager(workerdManagerDir);
-      } else if (Date.now() - lastUpdate > 1000 * 60 * 60 * 24) {
+      } else if (Date.now() - lastUpdate > 1000 * 60 * 60 * 24 * 7) {
+        debug(
+          `A week has passed since the last update: ${new Date(lastUpdate)}`,
+        );
         await updateWorkerdManager(workerdManagerDir);
+        const before = JSON.parse(await Deno.readTextFile(packageJson));
+        before.lastUpdate = Date.now();
+        await Deno.writeTextFile(packageJson, JSON.stringify(before));
       } else {
         debug(`Using cached workerd manager in ${workerdManagerDir}`);
       }

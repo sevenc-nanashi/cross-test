@@ -8,14 +8,14 @@ import type { InitialParentData } from "./base.ts";
 
 let globalId = 0;
 
-export const crossTestRunner = () => {
-  return (test: Deno.TestStepDefinition["fn"]) => {
+export const crossTestRegistrar = () => {
+  return (
+    _name: string,
+    _options: unknown,
+    test: Deno.TestStepDefinition["fn"],
+  ) => {
     const localId = globalId++;
     (globalThis as Global).__crosstestRunnerCallbacks.set(localId, test);
-
-    return () => {
-      throw new Error("Unreachable");
-    };
   };
 };
 type Global = typeof globalThis & {

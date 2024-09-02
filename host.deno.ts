@@ -1,4 +1,4 @@
-import type { TestOptions } from "./crossTest.ts";
+import type { CrossTestRegistrar, TestOptions } from "./crossTest.ts";
 import { debug } from "./debug.ts";
 import { BrowserRunnerController } from "./runtimes/browser.ts";
 import { NodeLikeRunnerController } from "./runtimes/nodeLike.ts";
@@ -18,7 +18,7 @@ export const crossTestHost = async ({
 }: {
   file: string;
   options: TestOptions;
-}) => {
+}): Promise<CrossTestRegistrar> => {
   const controllers: Partial<Controllers> = {};
   for (const runtime of options.runtimes) {
     switch (runtime) {
@@ -45,13 +45,32 @@ export const crossTestHost = async ({
 
   let nextTestId = 0;
 
-  return (test: Deno.TestStepDefinition["fn"]): Deno.TestDefinition["fn"] => {
-    return async (t: Deno.TestContext) => {
+  return (
+    ...args:
+      | [name: string, fn: Deno.TestDefinition["fn"]]
+      | [
+          name: string,
+          options: Omit<Deno.TestDefinition, "name" | "fn" | "sanitizeOps">,
+          fn: Deno.TestStepDefinition["fn"],
+        ]
+  ) => {
+    let name: string;
+    let testOptions: Omit<Deno.TestDefinition, "name" | "fn" | "sanitizeOps">;
+    let testFn: Deno.TestStepDefinition["fn"];
+    if (args.length === 2) {
+      [name, testFn] = args;
+      testOptions = {};
+    } else if (args.length === 3) {
+      [name, testOptions, testFn] = args;
+    } else {
+      throw new Error("Invalid number of arguments");
+    }
+    Deno.test(name, { ...testOptions, sanitizeOps: false }, async (t) => {
       const testId = nextTestId++;
       debug(`Test registered: ${file}[${testId}]`);
       for (const runtime of options.runtimes) {
         if (runtime === "deno") {
-          await t.step("Deno", test);
+          await t.step("Deno", testFn);
         } else {
           await t.step(
             `${runtime[0].toUpperCase()}${runtime.slice(1)}`,
@@ -64,6 +83,6 @@ export const crossTestHost = async ({
           );
         }
       }
-    };
+    });
   };
 };

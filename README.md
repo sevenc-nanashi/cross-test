@@ -23,7 +23,11 @@ $ deno add @sevenc-nanashi/cross-test
 import { createCrossTest } from "@sevenc-nanashi/cross-test";
 
 const crossTest = createCrossTest({
-  runtimes: ["deno", "node", "bun", "workerd"],
+  runtimes: ["deno", "node", "bun", "workerd", "browser"],
+});
+
+crossTest("My Test", () => {
+  // Your test code here will be run in these 5 runtimes.
 });
 ```
 

@@ -16,16 +16,16 @@ const crossTest = await createCrossTest(import.meta.url, {
   runtimes: ["deno", "node", "bun", "workerd", "browser"],
 });
 
-Deno.test(
+crossTest(
   "Failing: Using TextDecoder with shift_jis",
   {
     ignore: !shouldRun,
   },
-  crossTest(() => {
+  () => {
     const bytes = [147, 250, 150, 123, 140, 234];
 
     const decoder = new TextDecoder("shift_jis");
     const data = decoder.decode(Uint8Array.from(bytes));
     assertEquals(data, "日本語");
-  }),
+  },
 );
