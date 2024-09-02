@@ -17,6 +17,7 @@ import { join } from "@std/path";
 import { exists } from "@std/fs/exists";
 import { Lock } from "@core/asyncutil/lock";
 import { AsyncValue } from "@core/asyncutil/async-value";
+import workerdManagerSrc from "./workerdManager.generated.ts";
 
 const workerdVersion = "latest";
 
@@ -72,18 +73,12 @@ const workerdManagerMesasgePromises = new Map<
   { resolve: (data: FromMfManagerMessage) => void; reject: (e: Error) => void }
 >();
 
-const workerdPath = new URL("./workerdManager.node.ts", import.meta.url)
-  .pathname;
-
 // Bump when the workerd manager must be recreated (for big changes)
 const workerdManagerVersion = 1;
 const setupWorkerdManager = async (path: string) => {
   debug(`Setting up workerd manager in ${path}`);
   await Deno.mkdir(path, { recursive: true });
-  await Deno.writeTextFile(
-    join(path, "workerdManager.ts"),
-    await Deno.readTextFile(workerdPath),
-  );
+  await Deno.writeTextFile(join(path, "workerdManager.ts"), workerdManagerSrc);
   await Deno.writeTextFile(
     join(path, "package.json"),
     JSON.stringify({
@@ -153,7 +148,7 @@ const getWorkerdManager = async () =>
 
     await Deno.writeTextFile(
       join(workerdManagerDir, "workerdManager.ts"),
-      await Deno.readTextFile(workerdPath),
+      workerdManagerSrc,
     );
 
     const command = new Deno.Command("npm", {

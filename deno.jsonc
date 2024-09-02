@@ -2,7 +2,8 @@
   "name": "@sevenc-nanashi/cross-test",
   "version": "0.0.3",
   "tasks": {
-    "dev": "deno test --watch mod.ts"
+    "dev": "deno test --watch mod.ts",
+    "generateWorkerdManager": "deno run -A ./tasks/generateWorkerManager.ts"
   },
   "publish": {
     "include": ["*.ts", "deno.jsonc", "runtimes/*.ts", "LICENSE", "README.md"]

@@ -30,3 +30,10 @@ jobs:
           key: ${{ runner.os }}-cross-test-workerd-manager
       - name: Run tests
         run: deno test -A ./example
+      - name: Check if workerdManager.node.generated.ts is up-to-date
+        run: |
+          cp ./runtimes/workerdManager.generated.ts ./runtimes/workerdManager.generated.ts.bak
+          deno task generateWorkerdManager
+          diff ./runtimes/workerdManager.generated.ts ./runtimes/workerdManager.generated.ts.bak
+      - name: Run tests
+        run: deno publish

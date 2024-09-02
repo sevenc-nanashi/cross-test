@@ -654,6 +654,7 @@
       "npm:dequal@^2.0.3",
       "npm:esbuild@^0.23.0",
       "npm:get-port-please@^3.1.2",
+      "npm:global-cache-dir@^6.0.0",
       "npm:miniflare@^3.20240806.0",
       "npm:source-map@^0.7.4"
     ]
