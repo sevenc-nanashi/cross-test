@@ -1,3 +1,7 @@
+/**
+ * This test uses `@cross/fs`, a file system abstraction that works on both Deno and Node-like runtimes.
+ */
+
 import { createCrossTest } from "../mod.ts";
 import { readFile } from "jsr:@cross/fs/io";
 

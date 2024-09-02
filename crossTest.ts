@@ -1,11 +1,15 @@
 import { crossTestRegistrar } from "./runtimes/runner.ts";
 import * as host from "./host.deno.ts";
 
+/** Represents the runtime where the test should run. */
 export type Runtime = "node" | "browser" | "deno" | "workerd" | "bun";
+
+/** Options for initializing cross-test. */
 export type TestOptions = {
   runtimes: Runtime[];
 };
 
+/** Register a cross-runtime test. */
 export type CrossTestRegistrar = {
   (name: string, fn: Deno.TestDefinition["fn"]): void;
   (
@@ -16,6 +20,18 @@ export type CrossTestRegistrar = {
 };
 
 const calledFrom = new Set<string>();
+
+/**
+ * Create a cross-runtime test.
+ *
+ * > [!NOTE]
+ * > You must call this function only once per file.
+ *
+ * @param file - The URL of the file where the test is created. You MUST set this to `import.meta.url`.
+ * @param options - Options for initializing cross-test.
+ *
+ * @returns A function to register a test.
+ */
 export const createCrossTest = async (
   file: string,
   options: TestOptions,

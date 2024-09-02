@@ -31,6 +31,20 @@ crossTest("My Test", () => {
 });
 ```
 
+## How does it work?
+
+- Deno: It runs the test code in the Deno runtime.
+- Node.js, Bun:
+  - Compile the test code to ESM using `esbuild`.
+  - Run the compiled code in the Node.js or Bun runtime.
+- Workerd:
+  - Create a Node project which runs miniflare, a local emulator of Cloudflare Workers.
+  - Compile the test code to ESM using `esbuild`.
+  - Run the compiled code in the Workerd runtime via the created Node project.
+- Browser:
+  - Compile the test code to ESM using `esbuild`.
+  - Run the compiled code in the Browser runtime via [`@astral/astral`](https://jsr.io/@astral/astral)
+
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file
